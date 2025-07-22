@@ -1,171 +1,193 @@
-# Creeping Waves on Metallic Sphere - Educational Manim Animations
+# RCS Visualizations
 
-Comprehensive physics visualizations explaining how creeping waves form when electromagnetic waves interact with curved conducting surfaces. These animations are designed to provide intuitive understanding of radar cross-section physics.
+Educational animations explaining Radar Cross Section (RCS) calculations and stealth physics using Manim.
 
-## Overview
+## Quick Start
 
-This project includes two animations:
+```bash
+# Render all visualizations with interactive menu
+./render
 
-### 1. Basic Version (`creeping_waves_animation.py`)
+# Quick parallel render (all scenes, preview quality)
+./render all --parallel
 
-A step-by-step educational walkthrough showing:
+# Render specific scene
+./render "Radar Facets" -q high
 
-- **Step 1**: Direct (specular) reflection - how most energy bounces off like a mirror
-- **Step 2**: Surface wave formation - how some energy couples into the surface
-- **Step 3**: Creeping wave propagation - waves traveling around the curved boundary
-- **Step 4**: Backscatter contribution - radiation from the shadow region
-- **Comparison**: Shows why actual RCS exceeds simplified predictions
+# List available scenes
+./render --list
 
-### 2. Enhanced Version (`creeping_waves_enhanced.py`)
+# Clean media cache
+python scripts/clean.py
+```
 
-A deeper physics exploration featuring:
+## Project Structure
 
-- Electromagnetic wave fundamentals (E and B field visualization)
-- Three phenomena when waves meet spheres (reflection, diffraction, surface waves)
-- Detailed surface current formation and coupling mechanism
-- Wave packet visualization with exponential decay
-- Split-screen comparison of simplified vs actual physics
+```
+rcs-visualizations/
+├── scenes/                # All visualization scenes
+│   ├── registry.py       # Central registry of all scenes
+│   ├── radar_facets_visualization.py
+│   ├── deformation_vectors_visualization.py
+│   ├── voxel_topology_visualization.py
+│   ├── optimizer_comparison_visualization.py
+│   ├── creeping_waves_enhanced.py
+│   ├── creeping_waves_animation.py
+│   └── topopt.py
+├── scripts/              # Utility scripts
+│   ├── render.py        # Universal render script
+│   └── clean.py         # Clean media cache
+├── docs/                # Documentation
+│   ├── VISUALIZATIONS_README.md
+│   ├── PERFORMANCE_TIPS.md
+│   └── TESTING_SUMMARY.md
+├── render               # Main render command
+└── requirements.txt
 
-## Installation
+```
 
-1. Install Python 3.8+ if not already installed
-2. Install the required dependencies:
+## Available Scenes
+
+All scenes are automatically discovered from `scenes/registry.py`. Current scenes include:
+
+1. **Radar Facets** - Shows radar waves interacting with triangular facets
+2. **Deformation Vectors** - Demonstrates mesh deformation for optimization
+3. **Voxel Topology** - Density-based topology optimization
+4. **Optimizer Comparison** - Gradient descent vs Adam optimizer
+5. **Creeping Waves** - Electromagnetic wave propagation on curved surfaces
+6. **Topology Optimization** - RCS reduction through shape optimization
+
+## Adding New Scenes
+
+1. Create your scene file in `scenes/`:
+```python
+# scenes/my_new_scene.py
+from manim import *
+
+class MyNewScene(Scene):
+    def construct(self):
+        # Your animation code
+        pass
+```
+
+2. Register it in `scenes/registry.py`:
+```python
+SCENES = [
+    # ... existing scenes ...
+    {
+        "module": "scenes.my_new_scene",
+        "class": "MyNewScene",
+        "name": "My New Scene",
+        "description": "Description of what it shows",
+        "blog_section": "Section name"
+    }
+]
+```
+
+3. Render it:
+```bash
+./render "My New Scene"
+```
+
+## Rendering Options
+
+### Interactive Menu
+```bash
+./render
+```
+Provides an interactive menu to select quality and scenes.
+
+### Command Line
+```bash
+# Render all scenes in parallel
+./render all --parallel
+
+# Render specific scenes
+./render "Radar Facets" "Voxel Topology" -q medium
+
+# Render with specific quality
+./render all -q high  # Options: preview, low, medium, high, 4k
+
+# Control parallel workers
+./render all --parallel --workers 2
+```
+
+### Quality Presets
+
+- **preview** (480p, 15fps) - Fastest, opens video after rendering
+- **low** (480p, 15fps) - Fast, no preview
+- **medium** (720p, 30fps) - Balanced quality/speed
+- **high** (1080p, 60fps) - Publication quality
+- **4k** (2160p, 60fps) - Maximum quality, very slow
+
+## Performance Tips
+
+For faster rendering:
+
+1. Use preview quality during development:
    ```bash
-   pip install -r requirements.txt
+   ./render "Scene Name" -q preview
    ```
 
-## Usage
+2. Use parallel rendering for multiple scenes:
+   ```bash
+   ./render all --parallel
+   ```
 
-### Quick Start (Basic Version)
+3. Clean media cache regularly:
+   ```bash
+   python scripts/clean.py
+   ```
 
+See `docs/PERFORMANCE_TIPS.md` for more optimization strategies.
+
+## Physics Concepts Covered
+
+### Radar Cross Section (RCS)
+- How electromagnetic waves interact with objects
+- Phase computation and interference
+- Discrete approximation with triangular facets
+
+### Shape Optimization
+- Deformation vectors for smooth shape changes
+- Density-based topology optimization
+- Gradient descent vs advanced optimizers
+
+### Wave Propagation
+- Creeping waves on curved surfaces
+- Surface currents and electromagnetic coupling
+- Backscatter contributions
+
+## Requirements
+
+- Python 3.8+
+- Manim 0.18.0
+- NumPy, SciPy
+
+Install dependencies:
 ```bash
-python render_animation.py
+pip install -r requirements.txt
 ```
 
-### Render Enhanced Version
+## Output
 
-```bash
-python render_animation.py --version=enhanced
+Rendered videos are saved in:
+```
+media/videos/<scene_name>/<quality>/<SceneName>.mp4
 ```
 
-### Quality Options
+## Documentation
 
-```bash
-# Fast preview (low quality)
-python render_animation.py --quality=l
-
-# Medium quality
-python render_animation.py --quality=m
-
-# High quality (default)
-python render_animation.py --quality=h
-
-# 4K quality (very slow)
-python render_animation.py --quality=k
-```
-
-### Manual Rendering
-
-```bash
-# Basic version
-manim -pqh --renderer=opengl creeping_waves_animation.py CreepingWavesVisualization
-
-# Enhanced version
-manim -pqh --renderer=opengl creeping_waves_enhanced.py CreepingWavesEnhanced
-```
-
-## Animation Details
-
-### Basic Version (24 seconds)
-
-1. **Introduction** (0-3s): Title and metallic sphere setup
-2. **Direct Reflection** (3-8s): Shows specular reflection like a mirror
-3. **Surface Wave Formation** (8-13s): Energy coupling at grazing incidence
-4. **Creeping Wave Journey** (13-18s): Waves wrapping around the sphere
-5. **Backscatter** (18-21s): Additional returns from shadow region
-6. **Comparison** (21-24s): 50% increase in radar returns
-
-### Enhanced Version (35+ seconds)
-
-1. **Title Sequence** (0-3s): Engaging introduction
-2. **EM Wave Basics** (3-8s): E-field, B-field, and propagation
-3. **Wave-Sphere Interaction** (8-15s): Three key phenomena
-4. **Surface Physics** (15-22s): Detailed coupling mechanism
-5. **Wave Propagation** (22-28s): Packet visualization with decay
-6. **Radar Implications** (28-35s): Side-by-side comparison
-
-## Physics Explained
-
-### What are Creeping Waves?
-
-When electromagnetic waves strike a conducting sphere at grazing angles, some energy doesn't immediately scatter away. Instead, it couples into surface currents that propagate along the curved boundary. These "creeping waves" travel around to the shadow region and radiate back toward the source, creating additional backscatter.
-
-### Why Do They Matter?
-
-- **Radar Detection**: Creeping waves increase radar cross-section by 50% or more
-- **Stealth Design**: Understanding these effects is crucial for radar signature management
-- **Physics Education**: Perfect example of wave behavior beyond simple geometric optics
-
-### Key Concepts Visualized
-
-- **Surface Current Formation**: How EM fields induce tangential currents
-- **Exponential Decay**: Wave amplitude decreases as e^(-αs) along the path
-- **Shadow Region Radiation**: Delayed backscatter from the "dark" side
-- **Frequency Dependence**: Effects are strongest when sphere size ≈ wavelength
-
-## Customization
-
-Edit the animation files to adjust:
-
-- **Sphere properties**: Size, material appearance, opacity
-- **Wave visualization**: Colors, speeds, decay rates
-- **Camera angles**: Viewing perspectives and movements
-- **Timing**: Section durations and transition speeds
-- **Text**: Explanations and labels
-
-## Educational Applications
-
-Perfect for courses on:
-
-- **Electromagnetic Theory**: Wave-matter interactions
-- **Radar Systems**: Understanding RCS and detection
-- **Antenna Theory**: Surface wave propagation
-- **Applied Physics**: Real-world wave phenomena
-- **Engineering**: Stealth technology principles
-
-## Technical Notes
-
-- Uses Manim's 3D capabilities with OpenGL renderer
-- Resolution: 1920x1080 (1080p) by default
-- Frame rate: 60 fps for smooth animations
-- Color scheme optimized for clarity and aesthetics
-- Physics accuracy balanced with visual clarity
+- `docs/VISUALIZATIONS_README.md` - Detailed scene descriptions
+- `docs/PERFORMANCE_TIPS.md` - Rendering optimization guide
+- `docs/TESTING_SUMMARY.md` - Testing documentation
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **OpenGL errors**: Falls back to Cairo renderer automatically
-2. **Slow rendering**: Use `--quality=l` for development
-3. **Memory issues**: Close other applications, use lower quality
-4. **Import errors**: Ensure all dependencies installed
-
-### Tips for Best Results
-
-- Use OpenGL renderer for smoother 3D animations
-- Preview with low quality first, then render final in high
-- Enhanced version requires more computational resources
-- Output files are in `media/videos/` directory
-
-## Connection to Article
-
-These animations complement the article "Remaking Echo 1 - Stealth Physics" by visualizing:
-
-- Why Physical Optics alone underestimates backscatter
-- How Ufimtsev's edge diffraction theory relates to creeping waves
-- The physical mechanisms behind "extra" radar returns
-- Why spheres are actually poor for stealth (despite intuition)
+1. **Slow rendering**: Use preview quality or parallel rendering
+2. **Out of memory**: Clean media cache with `python scripts/clean.py`
+3. **Import errors**: Ensure you're in the project root when running scripts
 
 ## Credits
 
-Created as educational companion to radar cross-section physics explanations. Inspired by the elegance of electromagnetic phenomena and the importance of understanding wave behavior for modern technology.
+Created as educational companion to radar cross-section physics explanations for blog posts on stealth technology and electromagnetic wave behavior.
