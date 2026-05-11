@@ -1,195 +1,124 @@
 # RCS Visualizations
 
-Educational animations explaining Radar Cross Section (RCS) calculations and stealth physics using Manim.
+Animated companion to a Physical-Optics radar cross-section solver —
+short Manim scenes that explain *why* stealth aircraft shapes look the
+way they do. Each scene corresponds to one piece of the RCS pipeline,
+from triangular-facet phase summation to topology optimization.
 
-Companion to [nighthawk_rcs](https://github.com/pmazumder3927/nighthawk_rcs) (Physical Optics RCS simulator + topology optimizer).
+> Pair this with [**nighthawk_rcs**](https://github.com/pmazumder3927/nighthawk_rcs)
+> for the actual physical-optics simulator and topology optimizer. This
+> repo is the geometry-and-physics intuition behind the equations
+> nighthawk_rcs is solving numerically.
 
-## Quick Start
+---
 
-```bash
-# Render all visualizations with interactive menu
-./render
+## The pieces
 
-# Quick parallel render (all scenes, preview quality)
-./render all --parallel
+### Radar facets — scattering from a triangular mesh
 
-# Render specific scene
-./render "Radar Facets" -q high
+![Radar facets — discretizing the body](docs/img/scene_5.gif)
 
-# List available scenes
-./render --list
+Physical-optics codes turn a smooth body into a triangular mesh, then
+compute scattering one facet at a time. For each facet, the solver
+checks whether the incident wave illuminates it (`-k_i · n > 0`),
+multiplies by the local surface current, and weights by the phase
+`exp(i k · r)` so contributions from different facets interfere
+correctly. A sphere is just an icosahedron with enough subdivisions.
 
-# Clean media cache
-python scripts/clean.py
-```
+### Reflection from a flat plate — the specular spike
 
-## Project Structure
+![Specular reflection from a plate](docs/img/scene_1.gif)
 
-```
-rcs-visualizations/
-├── scenes/                # All visualization scenes
-│   ├── registry.py       # Central registry of all scenes
-│   ├── radar_facets_visualization.py
-│   ├── deformation_vectors_visualization.py
-│   ├── voxel_topology_visualization.py
-│   ├── optimizer_comparison_visualization.py
-│   ├── creeping_waves_enhanced.py
-│   ├── creeping_waves_animation.py
-│   └── topopt.py
-├── scripts/              # Utility scripts
-│   ├── render.py        # Universal render script
-│   └── clean.py         # Clean media cache
-├── docs/                # Documentation
-│   ├── VISUALIZATIONS_README.md
-│   ├── PERFORMANCE_TIPS.md
-│   └── TESTING_SUMMARY.md
-├── render               # Main render command
-└── requirements.txt
+A flat metallic plate normal to the radar is the worst-case stealth
+geometry: every point on the plate reflects with the same phase, so the
+contributions add coherently and the return is enormous (`σ ∝ A² / λ²`).
+Tilt the plate, scatter the energy somewhere else, and that coherent
+spike collapses — the whole point of faceted shapes like the F-117.
 
-```
+### Facet H-field — what the integrand looks like
 
-## Available Scenes
+![Magnetic field on a single facet](docs/img/scene_2.gif)
 
-All scenes are automatically discovered from `scenes/registry.py`. Current scenes include:
+Zooming in on a single triangle, the physical-optics approximation
+replaces the true surface current with `J_s ≈ 2 n × H_inc` (PEC
+assumption). The scattered field from this facet is then a Fourier-like
+integral over its area. This scene shows the incident `H` vector
+landing on one tile of the mesh.
 
-1. **Radar Facets** - Shows radar waves interacting with triangular facets
-2. **Deformation Vectors** - Demonstrates mesh deformation for optimization
-3. **Voxel Topology** - Density-based topology optimization
-4. **Optimizer Comparison** - Gradient descent vs Adam optimizer
-5. **Creeping Waves** - Electromagnetic wave propagation on curved surfaces
-6. **Topology Optimization** - RCS reduction through shape optimization
+### Scattered field — the coherent sum
 
-## Adding New Scenes
+![Scattered-field equation](docs/img/scene_3.gif)
 
-1. Create your scene file in `scenes/`:
-```python
-# scenes/my_new_scene.py
-from manim import *
+Sum every illuminated facet's contribution, weighted by area `A_i`,
+surface current `J_{s,i}`, and the path-difference phase `e^{j k r_i}`,
+and you get the body's scattered field in the observer direction. This
+sum is what an RCS solver is actually computing.
 
-class MyNewScene(Scene):
-    def construct(self):
-        # Your animation code
-        pass
-```
+### Wave vectors and destructive interference
 
-2. Register it in `scenes/registry.py`:
-```python
-SCENES = [
-    # ... existing scenes ...
-    {
-        "module": "scenes.my_new_scene",
-        "class": "MyNewScene",
-        "name": "My New Scene",
-        "description": "Description of what it shows",
-        "blog_section": "Section name"
-    }
-]
-```
+![Incident and scattered wave vectors](docs/img/scene_4.gif)
 
-3. Render it:
-```bash
-./render "My New Scene"
-```
+Shape optimizers exploit the phase term: shift a vertex by `Δr` and
+that facet's contribution rotates around the unit circle. Pick
+deformations that drive contributions toward `180°` opposition and the
+backscatter cancels. "Stealthy" geometry is geometry where the coherent
+sum nearly vanishes in the threat direction.
 
-## Rendering Options
+### Creeping waves — the return PO misses
 
-### Interactive Menu
-```bash
-./render
-```
-Provides an interactive menu to select quality and scenes.
+![Creeping waves on a sphere](docs/img/scene_6.gif)
 
-### Command Line
-```bash
-# Render all scenes in parallel
-./render all --parallel
+Pure physical optics only captures the directly-illuminated face of a
+body. Real radar returns also include surface currents that creep
+around the shadowed side and re-radiate — the orange tangential paths
+in this scene. For curved bodies near grazing incidence, the creeping
+contribution can be 50 % of the total return, which is why diffraction
+and surface-wave corrections matter even on otherwise-stealthy shapes.
 
-# Render specific scenes
-./render "Radar Facets" "Voxel Topology" -q medium
+---
 
-# Render with specific quality
-./render all -q high  # Options: preview, low, medium, high, 4k
+## How the scenes are wired up
 
-# Control parallel workers
-./render all --parallel --workers 2
-```
+Seven Manim scenes, registered in `scenes/registry.py`:
 
-### Quality Presets
+| Scene name             | Class                              | Topic                                   |
+| ---------------------- | ---------------------------------- | --------------------------------------- |
+| Radar Facets           | `RadarFacetsVisualization`         | Faceted body + illumination + phase     |
+| Deformation Vectors    | `DeformationVectorsVisualization`  | Per-vertex offsets driving shape change |
+| Voxel Topology         | `VoxelTopologyVisualization`       | Density-based topology optimization     |
+| Optimizer Comparison   | `OptimizerComparisonVisualization` | Gradient descent vs Adam on RCS loss    |
+| Creeping Waves Basic   | `CreepingWavesVisualization`       | 4-step creeping-wave story              |
+| Creeping Waves Enhanced| `CreepingWavesEnhanced`            | Extended EM + diffraction walkthrough   |
+| Topology Optimization  | `TopOptRCS`                        | Toy RCS-driven shrink-the-rear demo     |
 
-- **preview** (480p, 15fps) - Fastest, opens video after rendering
-- **low** (480p, 15fps) - Fast, no preview
-- **medium** (720p, 30fps) - Balanced quality/speed
-- **high** (1080p, 60fps) - Publication quality
-- **4k** (2160p, 60fps) - Maximum quality, very slow
+Common visual identity (background colour, default camera, title cards,
+HUD text bookkeeping) lives in `scenes/_common.py` so a new scene only
+has to describe its physics.
 
-## Performance Tips
+## Render your own
 
-For faster rendering:
-
-1. Use preview quality during development:
-   ```bash
-   ./render "Scene Name" -q preview
-   ```
-
-2. Use parallel rendering for multiple scenes:
-   ```bash
-   ./render all --parallel
-   ```
-
-3. Clean media cache regularly:
-   ```bash
-   python scripts/clean.py
-   ```
-
-See `docs/PERFORMANCE_TIPS.md` for more optimization strategies.
-
-## Physics Concepts Covered
-
-### Radar Cross Section (RCS)
-- How electromagnetic waves interact with objects
-- Phase computation and interference
-- Discrete approximation with triangular facets
-
-### Shape Optimization
-- Deformation vectors for smooth shape changes
-- Density-based topology optimization
-- Gradient descent vs advanced optimizers
-
-### Wave Propagation
-- Creeping waves on curved surfaces
-- Surface currents and electromagnetic coupling
-- Backscatter contributions
-
-## Requirements
-
-- Python 3.8+
-- Manim 0.18.0
-- NumPy, SciPy
-
-Install dependencies:
 ```bash
 pip install -r requirements.txt
+
+./render --list                  # see registered scenes
+./render all --parallel -q high  # render everything in parallel
+./render "Radar Facets" -q low   # render just one, fast preview
+./render                         # interactive menu
 ```
 
-## Output
+Output lands under `media/videos/<scene>/<resolution>/<Class>.mp4`. See
+[`docs/rendering.md`](docs/rendering.md) for quality presets, speed
+knobs, and the recipe for adding a new scene.
 
-Rendered videos are saved in:
-```
-media/videos/<scene_name>/<quality>/<SceneName>.mp4
-```
+## Repo layout
 
-## Documentation
+* `scenes/` — one file per visualization plus `_common.py` for shared
+  setup and `registry.py` listing every scene the renderer should know
+  about.
+* `scripts/` — `render.py` (the universal renderer behind `./render`)
+  and `clean.py` for the Manim media cache.
+* `docs/img/` — the preview GIFs above. Source of truth for the README.
 
-- `docs/VISUALIZATIONS_README.md` - Detailed scene descriptions
-- `docs/PERFORMANCE_TIPS.md` - Rendering optimization guide
-- `docs/TESTING_SUMMARY.md` - Testing documentation
+## License
 
-## Troubleshooting
-
-1. **Slow rendering**: Use preview quality or parallel rendering
-2. **Out of memory**: Clean media cache with `python scripts/clean.py`
-3. **Import errors**: Ensure you're in the project root when running scripts
-
-## Credits
-
-Created as educational companion to radar cross-section physics explanations for blog posts on stealth technology and electromagnetic wave behavior.
+MIT — see [LICENSE](LICENSE).
