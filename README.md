@@ -2,6 +2,8 @@
 
 Educational animations explaining Radar Cross Section (RCS) calculations and stealth physics using Manim.
 
+Companion to [nighthawk_rcs](https://github.com/pmazumder3927/nighthawk_rcs) (Physical Optics RCS simulator + topology optimizer).
+
 ## Quick Start
 
 ```bash
