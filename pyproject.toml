@@ -1,9 +1,20 @@
 [project]
 name = "rcs-visualizations"
 version = "0.1.0"
-description = "Add your description here"
+description = "Manim animations explaining the physical-optics RCS calculations behind stealth-aircraft shaping."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
     "manim>=0.19.0",
+    "numpy>=1.21.0",
+    "scipy>=1.7.0",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Manim leans on F405-prone star-import patterns inside ``construct``;
+# we use named imports everywhere instead.
+extend-select = ["I"]
